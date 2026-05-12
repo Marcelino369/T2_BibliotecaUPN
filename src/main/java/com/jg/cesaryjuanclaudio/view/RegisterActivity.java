@@ -45,7 +45,7 @@ public class RegisterActivity extends AppCompatActivity {
             tilCodigoPersonal, tilArea;
     TextView tvTitulo;
 
-    Button btnRegistrar, btnBloquear, btnActivar;
+    Button btnRegistrar, btnEstado;
 
     AppDatabase database;
     UsuarioService usuarioService;
@@ -105,8 +105,7 @@ public class RegisterActivity extends AppCompatActivity {
         tilArea             = findViewById(R.id.til_area);
 
         btnRegistrar = findViewById(R.id.btn_registrar);
-        btnBloquear  = findViewById(R.id.btn_bloquear);
-        btnActivar   = findViewById(R.id.btn_activar);
+        btnEstado  = findViewById(R.id.btn_estado);
 
         tvTitulo = findViewById(R.id.tv_titulo);
     }
@@ -167,17 +166,17 @@ public class RegisterActivity extends AppCompatActivity {
             rbEstudiante.setChecked(true);
             etCodigoEstudiante.setText(((Estudiante) u).getCodEstudiante());
             etCarrera.setText(((Estudiante) u).getCarrera());
-            etCodigoEstudiante.setEnabled(false); // No cambiar código
+            etCodigoEstudiante.setEnabled(false);
         } else if (u instanceof Docente) {
             rbDocente.setChecked(true);
             etCodigoDocente.setText(((Docente) u).getCodDocente());
             etFacultad.setText(((Docente) u).getFacultad());
-            etCodigoDocente.setEnabled(false); // No cambiar código
+            etCodigoDocente.setEnabled(false);
         } else if (u instanceof Administrativo) {
             rbPersonal.setChecked(true);
             etCodigoPersonal.setText(((Administrativo) u).getCodAdmin());
             etArea.setText(((Administrativo) u).getArea());
-            etCodigoPersonal.setEnabled(false); // No cambiar código
+            etCodigoPersonal.setEnabled(false);
         }
 
         tvTitulo.setText("Modificar Usuario");
@@ -187,40 +186,45 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void configurarBotonesEstado(Usuario u) {
         if (u.getEstado() == EstadoUsuario.ACTIVO) {
-            btnBloquear.setVisibility(View.VISIBLE);
-            btnActivar.setVisibility(View.GONE);
+            btnEstado.setText("Desactivar");
+            btnEstado.setVisibility(View.VISIBLE);
         } else {
-            btnBloquear.setVisibility(View.GONE);
-            btnActivar.setVisibility(View.VISIBLE);
+            btnEstado.setText("Activar");
+            btnEstado.setVisibility(View.VISIBLE);
         }
 
-        btnBloquear.setOnClickListener(v -> {
-            Executors.newSingleThreadExecutor().execute(() -> {
-                List<Prestamo> prestamosActivos = prestamoService.getPrestamosActivosDeUsuario(u.getCodigoUsuario());
+        String _estado = btnEstado.getText().toString();
 
-                if (prestamosActivos != null && !prestamosActivos.isEmpty()) {
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "No se puede bloquear: El usuario tiene " + prestamosActivos.size() + " préstamo(s) activo(s).", Toast.LENGTH_LONG).show();
-                    });
-                } else {
-                    usuarioService.bloquear(u);
-                    runOnUiThread(() -> {
-                        Toast.makeText(this, "Usuario Bloqueado", Toast.LENGTH_SHORT).show();
-                        finish(); // Salir tras bloquear
-                    });
-                }
-            });
-        });
+        if ( _estado.equals("Desactivar") ){
+            btnEstado.setOnClickListener(v -> {
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    List<Prestamo> prestamosActivos = prestamoService.getPrestamosActivosDeUsuario(u.getCodigoUsuario());
 
-        btnActivar.setOnClickListener(v -> {
-            Executors.newSingleThreadExecutor().execute(() -> {
-                usuarioService.activar(u);
-                runOnUiThread(() -> {
-                    Toast.makeText(this, "Usuario Activado", Toast.LENGTH_SHORT).show();
-                    finish(); // Salir tras activar
+                    if (prestamosActivos != null && !prestamosActivos.isEmpty()) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "No se puede bloquear: El usuario tiene " + prestamosActivos.size() + " préstamo(s) activo(s).", Toast.LENGTH_LONG).show();
+                        });
+                    } else {
+                        usuarioService.bloquear(u);
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Usuario Bloqueado", Toast.LENGTH_SHORT).show();
+                            finish();
+                        });
+                    }
                 });
             });
-        });
+        }else if (_estado.equals("Activar")){
+
+            btnEstado.setOnClickListener(v -> {
+                Executors.newSingleThreadExecutor().execute(() -> {
+                    usuarioService.activar(u);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Usuario Activado", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+                });
+            });
+        }
     }
 
     private void modificarUsuarioActual() {
@@ -241,7 +245,7 @@ public class RegisterActivity extends AppCompatActivity {
             usuarioService.actualizarUsuario(usuarioSeleccionado);
             runOnUiThread(() -> {
                 Toast.makeText(this, "Usuario actualizado correctamente.", Toast.LENGTH_SHORT).show();
-                finish(); // Volver a la lista
+                finish();
             });
         });
     }
@@ -293,6 +297,12 @@ public class RegisterActivity extends AppCompatActivity {
         Estudiante e = new Estudiante(nombre, apellido, correo, contrasena, cod, carrera);
 
         Executors.newSingleThreadExecutor().execute(() -> {
+            Usuario usuarioExistente = usuarioService.buscarPorCodigo(cod, TipoUsuarios.ESTUDIANTE);
+            if (usuarioExistente != null) {
+                runOnUiThread(() -> Toast.makeText(this, "Error: El código " + cod + " ya está registrado.", Toast.LENGTH_LONG).show());
+                return;
+            }
+
             usuarioService.registrarEstudiante(e);
             runOnUiThread(() -> {
                 Toast.makeText(this, "Estudiante registrado correctamente.", Toast.LENGTH_SHORT).show();
@@ -313,6 +323,12 @@ public class RegisterActivity extends AppCompatActivity {
         Docente d = new Docente(nombre, apellido, correo, contrasena, cod, facultad);
 
         Executors.newSingleThreadExecutor().execute(() -> {
+            Usuario usuarioExistente = usuarioService.buscarPorCodigo(cod, TipoUsuarios.DOCENTE);
+            if (usuarioExistente != null) {
+                runOnUiThread(() -> Toast.makeText(this, "Error: El código " + cod + " ya está registrado.", Toast.LENGTH_LONG).show());
+                return;
+            }
+
             usuarioService.registrarDocente(d);
             runOnUiThread(() -> {
                 Toast.makeText(this, "Docente registrado correctamente.", Toast.LENGTH_SHORT).show();
@@ -333,6 +349,12 @@ public class RegisterActivity extends AppCompatActivity {
         Administrativo a = new Administrativo(nombre, apellido, correo, contrasena, cod, area);
 
         Executors.newSingleThreadExecutor().execute(() -> {
+            Usuario usuarioExistente = usuarioService.buscarPorCodigo(cod, TipoUsuarios.ADMINISTRATIVO);
+            if (usuarioExistente != null) {
+                runOnUiThread(() -> Toast.makeText(this, "Error: El código " + cod + " ya está registrado.", Toast.LENGTH_LONG).show());
+                return;
+            }
+
             usuarioService.registrarAdministrativo(a);
             runOnUiThread(() -> {
                 Toast.makeText(this, "Personal registrado correctamente.", Toast.LENGTH_SHORT).show();
