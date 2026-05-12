@@ -114,6 +114,12 @@ public class LibrosActivity extends AppCompatActivity {
         Libro libro = new Libro(null, cod, titulo, cat, edit, stock, stock, EstadoLibro.DISPONIBLE);
 
         Executors.newSingleThreadExecutor().execute(() -> {
+            Libro libroExistente = libroService.buscarPorCodigo(cod);
+            if (libroExistente != null) {
+                runOnUiThread(() -> Toast.makeText(this, "Error: El código " + cod + " ya pertenece a otro libro.", Toast.LENGTH_LONG).show());
+                return;
+            }
+
             libroService.registrar(libro);
             runOnUiThread(() -> {
                 Toast.makeText(this, "Libro registrado.", Toast.LENGTH_SHORT).show();
