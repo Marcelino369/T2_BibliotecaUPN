@@ -6,6 +6,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -19,9 +20,15 @@ import com.jg.cesaryjuanclaudio.R;
 import com.jg.cesaryjuanclaudio.entities.Administrativo;
 import com.jg.cesaryjuanclaudio.entities.Docente;
 import com.jg.cesaryjuanclaudio.entities.Estudiante;
+import com.jg.cesaryjuanclaudio.entities.Prestamo;
+import com.jg.cesaryjuanclaudio.entities.Usuario;
+import com.jg.cesaryjuanclaudio.entities.estados.EstadoUsuario;
+import com.jg.cesaryjuanclaudio.entities.estados.TipoUsuarios;
 import com.jg.cesaryjuanclaudio.repositories.AppDatabase;
+import com.jg.cesaryjuanclaudio.services.PrestamoService;
 import com.jg.cesaryjuanclaudio.services.UsuarioService;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 
 public class RegisterActivity extends AppCompatActivity {
@@ -36,16 +43,22 @@ public class RegisterActivity extends AppCompatActivity {
     TextInputLayout tilCodigoEstudiante, tilCarrera,
             tilCodigoDocente, tilFacultad,
             tilCodigoPersonal, tilArea;
+    TextView tvTitulo;
 
-    Button btnRegistrar;
+    Button btnRegistrar, btnBloquear, btnActivar;
 
     AppDatabase database;
     UsuarioService usuarioService;
+    PrestamoService prestamoService;
+
+    Usuario usuarioSeleccionado = null;
+    boolean modoEdicion = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         database = AppDatabase.getDatabase(this);
         usuarioService = new UsuarioService(database);
+        prestamoService = new PrestamoService(database); // NUEVO
 
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
@@ -55,10 +68,17 @@ public class RegisterActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+
+        Button btnRetroceder  = findViewById(R.id.btn_retroceder);
+        if(btnRetroceder != null) {
+            btnRetroceder.setOnClickListener(v -> finish());
+        }
+
         vincularVistas();
         configurarRadioGroup();
+        verificarModoEdicion();
     }
-
 
     private void vincularVistas() {
         rgUsuario    = findViewById(R.id.rg_usuario);
@@ -85,12 +105,15 @@ public class RegisterActivity extends AppCompatActivity {
         tilArea             = findViewById(R.id.til_area);
 
         btnRegistrar = findViewById(R.id.btn_registrar);
+        btnBloquear  = findViewById(R.id.btn_bloquear);
+        btnActivar   = findViewById(R.id.btn_activar);
+
+        tvTitulo = findViewById(R.id.tv_titulo);
     }
 
     private void configurarRadioGroup() {
         rgUsuario.setOnCheckedChangeListener((group, checkedId) -> {
-            // Ocultar todo primero
-            ocultarCamposEspecificos();
+            if(!modoEdicion) ocultarCamposEspecificos();
 
             if (checkedId == R.id.rb_estudiante) {
                 tilCodigoEstudiante.setVisibility(View.VISIBLE);
@@ -103,8 +126,123 @@ public class RegisterActivity extends AppCompatActivity {
                 tilArea.setVisibility(View.VISIBLE);
             }
 
-            // El click del botón se asigna una sola vez aquí
-            btnRegistrar.setOnClickListener(v -> intentarRegistrar(checkedId));
+            btnRegistrar.setOnClickListener(v -> {
+                if (modoEdicion) {
+                    modificarUsuarioActual();
+                } else {
+                    intentarRegistrar(checkedId);
+                }
+            });
+        });
+    }
+
+    private void verificarModoEdicion() {
+        String codigoExtra = getIntent().getStringExtra("EXTRA_CODIGO");
+        String tipoExtra = getIntent().getStringExtra("EXTRA_TIPO");
+
+        if (codigoExtra != null && tipoExtra != null) {
+            modoEdicion = true;
+            TipoUsuarios tipo = TipoUsuarios.valueOf(tipoExtra);
+
+            Executors.newSingleThreadExecutor().execute(() -> {
+                usuarioSeleccionado = usuarioService.buscarPorCodigo(codigoExtra, tipo);
+                runOnUiThread(() -> cargarDatosEnVista(usuarioSeleccionado));
+            });
+        }
+    }
+
+    private void cargarDatosEnVista(Usuario u) {
+        if (u == null) return;
+
+        etNombre.setText(u.getNombre());
+        etApellido.setText(u.getApellido());
+        etCorreo.setText(u.getCorreo());
+        etContrasena.setText(u.getContrasena());
+
+        for(int i = 0; i < rgUsuario.getChildCount(); i++){
+            rgUsuario.getChildAt(i).setEnabled(false);
+        }
+
+        if (u instanceof Estudiante) {
+            rbEstudiante.setChecked(true);
+            etCodigoEstudiante.setText(((Estudiante) u).getCodEstudiante());
+            etCarrera.setText(((Estudiante) u).getCarrera());
+            etCodigoEstudiante.setEnabled(false); // No cambiar código
+        } else if (u instanceof Docente) {
+            rbDocente.setChecked(true);
+            etCodigoDocente.setText(((Docente) u).getCodDocente());
+            etFacultad.setText(((Docente) u).getFacultad());
+            etCodigoDocente.setEnabled(false); // No cambiar código
+        } else if (u instanceof Administrativo) {
+            rbPersonal.setChecked(true);
+            etCodigoPersonal.setText(((Administrativo) u).getCodAdmin());
+            etArea.setText(((Administrativo) u).getArea());
+            etCodigoPersonal.setEnabled(false); // No cambiar código
+        }
+
+        tvTitulo.setText("Modificar Usuario");
+        btnRegistrar.setText("Modificar");
+        configurarBotonesEstado(u);
+    }
+
+    private void configurarBotonesEstado(Usuario u) {
+        if (u.getEstado() == EstadoUsuario.ACTIVO) {
+            btnBloquear.setVisibility(View.VISIBLE);
+            btnActivar.setVisibility(View.GONE);
+        } else {
+            btnBloquear.setVisibility(View.GONE);
+            btnActivar.setVisibility(View.VISIBLE);
+        }
+
+        btnBloquear.setOnClickListener(v -> {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                List<Prestamo> prestamosActivos = prestamoService.getPrestamosActivosDeUsuario(u.getCodigoUsuario());
+
+                if (prestamosActivos != null && !prestamosActivos.isEmpty()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "No se puede bloquear: El usuario tiene " + prestamosActivos.size() + " préstamo(s) activo(s).", Toast.LENGTH_LONG).show();
+                    });
+                } else {
+                    usuarioService.bloquear(u);
+                    runOnUiThread(() -> {
+                        Toast.makeText(this, "Usuario Bloqueado", Toast.LENGTH_SHORT).show();
+                        finish(); // Salir tras bloquear
+                    });
+                }
+            });
+        });
+
+        btnActivar.setOnClickListener(v -> {
+            Executors.newSingleThreadExecutor().execute(() -> {
+                usuarioService.activar(u);
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "Usuario Activado", Toast.LENGTH_SHORT).show();
+                    finish(); // Salir tras activar
+                });
+            });
+        });
+    }
+
+    private void modificarUsuarioActual() {
+        usuarioSeleccionado.setNombre(etNombre.getText().toString().trim());
+        usuarioSeleccionado.setApellido(etApellido.getText().toString().trim());
+        usuarioSeleccionado.setCorreo(etCorreo.getText().toString().trim());
+        usuarioSeleccionado.setContrasena(etContrasena.getText().toString().trim());
+
+        if (usuarioSeleccionado instanceof Estudiante) {
+            ((Estudiante) usuarioSeleccionado).setCarrera(etCarrera.getText().toString().trim());
+        } else if (usuarioSeleccionado instanceof Docente) {
+            ((Docente) usuarioSeleccionado).setFacultad(etFacultad.getText().toString().trim());
+        } else if (usuarioSeleccionado instanceof Administrativo) {
+            ((Administrativo) usuarioSeleccionado).setArea(etArea.getText().toString().trim());
+        }
+
+        Executors.newSingleThreadExecutor().execute(() -> {
+            usuarioService.actualizarUsuario(usuarioSeleccionado);
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Usuario actualizado correctamente.", Toast.LENGTH_SHORT).show();
+                finish(); // Volver a la lista
+            });
         });
     }
 
@@ -117,14 +255,12 @@ public class RegisterActivity extends AppCompatActivity {
         tilArea.setVisibility(View.GONE);
     }
 
-    // Un solo punto de entrada para registrar según el radio seleccionado
     private void intentarRegistrar(int checkedId) {
         String nombre     = etNombre.getText().toString().trim();
         String apellido   = etApellido.getText().toString().trim();
         String correo     = etCorreo.getText().toString().trim();
         String contrasena = etContrasena.getText().toString().trim();
 
-        // Validaciones comunes
         if (nombre.isEmpty() || apellido.isEmpty() || correo.isEmpty() || contrasena.isEmpty()) {
             Toast.makeText(this, "Complete todos los campos.", Toast.LENGTH_SHORT).show();
             return;
@@ -218,10 +354,5 @@ public class RegisterActivity extends AppCompatActivity {
         etArea.setText("");
         rgUsuario.clearCheck();
         ocultarCamposEspecificos();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
     }
 }

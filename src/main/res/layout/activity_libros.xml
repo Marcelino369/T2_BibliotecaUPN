@@ -6,11 +6,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <Button
+        android:id="@+id/btn_retroceder"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:text="@string/retroceder"
+        android:textSize="20sp"
+        android:padding="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:gravity="center"
+        app:cornerRadius="24dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="10dp"/>
+
     <TextView
         android:id="@+id/tv_titulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Libros"
+        android:text="Gestión de Libros"
         android:textSize="28sp"
         android:textStyle="bold"
         android:layout_marginTop="16dp"
@@ -18,7 +36,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Registro rápido de libro -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/til_cod_libro"
         android:layout_width="0dp"
@@ -96,19 +113,46 @@
             android:id="@+id/et_stock"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Stock inicial"
+            android:hint="Stock"
             android:inputType="number"/>
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Fila de botones: Agregar/Modificar + Descartar + Renovar -->
     <Button
         android:id="@+id/btn_agregar_libro"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="4dp"
         android:layout_marginTop="8dp"
-        android:text="Agregar libro"
+        android:text="Agregar"
         app:layout_constraintTop_toBottomOf="@+id/til_stock"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btn_descartar"/>
+
+    <Button
+        android:id="@+id/btn_descartar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginTop="8dp"
+        android:text="Descartar"
+        android:enabled="false"
+        app:layout_constraintTop_toBottomOf="@+id/til_stock"
+        app:layout_constraintStart_toEndOf="@+id/btn_agregar_libro"
+        app:layout_constraintEnd_toStartOf="@+id/btn_renovar"/>
+
+    <Button
+        android:id="@+id/btn_renovar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="8dp"
+        android:text="Renovar"
+        android:enabled="false"
+        app:layout_constraintTop_toBottomOf="@+id/til_stock"
+        app:layout_constraintStart_toEndOf="@+id/btn_descartar"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <ListView

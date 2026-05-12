@@ -7,6 +7,24 @@
     android:layout_height="match_parent"
     tools:context=".view.RegisterActivity">
 
+    <Button
+        android:id="@+id/btn_retroceder"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:text="@string/retroceder"
+        android:textSize="20sp"
+        android:padding="0dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:gravity="center"
+        app:cornerRadius="24dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginTop="10dp"
+        android:layout_marginStart="10dp"/>
+
     <TextView
         android:id="@+id/tv_titulo"
         android:layout_width="wrap_content"
@@ -323,60 +341,77 @@
 
     <RadioGroup
         android:id="@+id/rg_usuario"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-
         android:layout_marginHorizontal="24dp"
-
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/til_area"
-        app:layout_constraintBottom_toTopOf="@+id/btn_registrar"
-        >
+        app:layout_constraintBottom_toTopOf="@+id/btn_bloquear">
 
         <RadioButton
             android:id="@+id/rb_estudiante"
-
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-
-            android:text="Estudiante"
-            />
+            android:text="Estudiante" />
 
         <RadioButton
             android:id="@+id/rb_docente"
-
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-
             android:text="Docente" />
 
         <RadioButton
             android:id="@+id/rb_pAdministrativo"
-
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-
             android:text="P. Administrativo" />
     </RadioGroup>
 
     <Button
-        android:id="@+id/btn_registrar"
-
-        android:layout_marginTop="16dp"
-
-        android:layout_width="match_parent"
+        android:id="@+id/btn_bloquear"
+        android:layout_width="0dp"
         android:layout_height="60dp"
-
         android:layout_marginHorizontal="24dp"
-
-        android:text="Registrar"
-        android:textStyle="normal"
+        android:layout_marginTop="16dp"
+        android:text="Bloquear"
         android:textSize="16sp"
-
+        android:textStyle="normal"
+        android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/rg_usuario"
+        app:layout_constraintBottom_toTopOf="@+id/btn_registrar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btn_activar"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="16dp"
+        android:text="Activar"
+        android:textSize="16sp"
+        android:textStyle="normal"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@+id/rg_usuario"
+        app:layout_constraintBottom_toTopOf="@+id/btn_registrar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btn_registrar"
+        android:layout_width="0dp"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:text="Registrar"
+        android:textSize="16sp"
+        android:textStyle="normal"
+        app:layout_goneMarginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@+id/btn_bloquear"
         app:layout_constraintBottom_toBottomOf="parent"
-        />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

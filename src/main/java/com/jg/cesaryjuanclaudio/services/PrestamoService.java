@@ -26,10 +26,6 @@ public class PrestamoService {
         this.moraService = MoraService.getInstance();
     }
 
-    /**
-     * Registrar un nuevo préstamo.
-     * @return null si éxito, o mensaje de error.
-     */
     public String prestarLibro(Usuario usuario, String codigoLibro, int diasPrestamo) {
 
         // Validar usuario
@@ -42,11 +38,9 @@ public class PrestamoService {
         if (libro == null) return "Libro no encontrado.";
         if (!libroService.estaDisponible(libro)) return "Libro no disponible.";
 
-        // Fechas con LocalDate
         LocalDate hoy = LocalDate.now();
         LocalDate fechaLimite = hoy.plusDays(diasPrestamo);
 
-        // Construir préstamo
         Prestamo prestamo = new Prestamo();
         prestamo.setCodigoUsuario(usuario.getCodigoUsuario());
         prestamo.setTipoUsuario(usuario.getTipoUsuario());
@@ -56,21 +50,15 @@ public class PrestamoService {
         prestamo.setFechaPrestamo(hoy);
         prestamo.setFechaLimite(fechaLimite);
 
-        // Guardar y decrementar stock
         prestamoDao.insert(prestamo);
         libroDao.decrementarStock(codigoLibro);
 
-        // Actualizar contador del usuario y guardarlo
         usuario.setCantPrestamo(usuario.getCantPrestamo() + 1);
         usuarioService.actualizarUsuario(usuario);
 
         return null; // null = éxito
     }
 
-    /**
-     * Devolver un libro (normal o perdido).
-     * @return mensaje con mora/multa si hubo cargo, null si entrega limpia.
-     */
     public String devolverLibro(Prestamo prestamo, Usuario usuario, boolean perdido) {
 
         LocalDate hoy = LocalDate.now();
@@ -83,7 +71,6 @@ public class PrestamoService {
             prestamo.setMoraAcumulada(Configuracion.MULTA_PERDIDA);
             cargo = Configuracion.MULTA_PERDIDA;
             mensaje = "Libro perdido. Multa aplicada: S/ " + cargo;
-            // Stock NO se devuelve
 
         } else {
             double mora = moraService.calcularMoraDevolucion(prestamo, hoy);
@@ -97,14 +84,12 @@ public class PrestamoService {
                 long dias = ChronoUnit.DAYS.between(prestamo.getFechaLimite(), hoy);
                 mensaje = "Entregado con " + dias + " días de retraso. Mora: S/ " + mora;
             } else {
-                mensaje = null; // entrega a tiempo, sin cargo
+                mensaje = null;
             }
         }
 
-        // Guardar préstamo cerrado
         prestamoDao.update(prestamo);
 
-        // Aplicar deuda al usuario y bajar contador
         if (cargo > 0) usuarioService.agregarDeuda(usuario, cargo);
         usuario.setCantPrestamo(Math.max(0, usuario.getCantPrestamo() - 1));
         usuarioService.actualizarUsuario(usuario);
@@ -121,7 +106,6 @@ public class PrestamoService {
     }
 
     public List<Prestamo> getPrestamosVencidos() {
-        // Pasamos la fecha hoy como String "YYYY-MM-DD" — mismo formato que guarda el Converter
         return prestamoDao.getPrestamosVencidos(LocalDate.now().toString());
     }
 

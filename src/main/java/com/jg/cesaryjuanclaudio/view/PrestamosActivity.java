@@ -55,14 +55,23 @@ public class PrestamosActivity extends AppCompatActivity {
             return insets;
         });
 
+        Button btnRetroceder  = findViewById(R.id.btn_retroceder);
+        btnRetroceder.setOnClickListener(v -> {
+            finish();
+        });
+
+
         etCodUsuario = findViewById(R.id.et_cod_usuario_prestamo);
         etCodLibro   = findViewById(R.id.et_cod_libro_prestamo);
         etDias       = findViewById(R.id.et_dias);
         etIdPrestamo = findViewById(R.id.et_id_prestamo);
+
         spinnerTipo  = findViewById(R.id.spinner_tipo_usuario);
         cbPerdido    = findViewById(R.id.cb_perdido);
+
         btnPrestar   = findViewById(R.id.btn_prestar);
         btnDevolver  = findViewById(R.id.btn_devolver);
+
         lvPrestamos  = findViewById(R.id.lv_prestamos);
 
         ArrayAdapter<String> adapterSpinner = new ArrayAdapter<>(this,

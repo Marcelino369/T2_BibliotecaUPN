@@ -18,12 +18,10 @@ import com.jg.cesaryjuanclaudio.services.AuthService;
 
 public class MainActivity extends AppCompatActivity {
 
-    // 1. Declarar las vistas
     private TextInputLayout tilMail;
     private TextInputLayout tilPassword;
     private TextInputEditText etCorreo;
     private TextInputEditText etPassword;
-    private Button btnSignIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,43 +35,42 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        // 2. Vincular las vistas con el XML
         tilMail = findViewById(R.id.til_mail);
         tilPassword = findViewById(R.id.til_password);
+
         etCorreo = findViewById(R.id.et_correo);
         etPassword = findViewById(R.id.et_password);
-        btnSignIn = findViewById(R.id.btn_signIn);
+        Button btnSignIn = findViewById(R.id.btn_signIn);
 
-        // 3. Configurar el evento del botón
         btnSignIn.setOnClickListener(v -> iniciarSesion());
     }
 
     private void iniciarSesion() {
-        String correo = etCorreo.getText().toString().trim();
-        String password = etPassword.getText().toString().trim();
+        String correo = etCorreo.getText().toString();
+        String password = etPassword.getText().toString();
 
         tilMail.setError(null);
         tilPassword.setError(null);
 
-        if (correo.isEmpty()) {
-            tilMail.setError("El correo es requerido");
+        if (correo.isBlank()) {
+            tilMail.setError("Error: El correo es requerido");
             return;
         }
-        if (password.isEmpty()) {
-            tilPassword.setError("La contraseña es requerida");
+        if (password.isBlank()) {
+            tilPassword.setError("Error: La contraseña es requerida");
             return;
         }
 
         boolean credencialesValidas = AuthService.getInstance().autenticar(correo, password);
 
         if (credencialesValidas) {
-            Toast.makeText(this, "Bienvenido al sistema", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Registro exitoso", Toast.LENGTH_SHORT).show();
 
-            Intent intent = new Intent(MainActivity.this, ReportesActivity.class); // <-- Cambia esto si tu Activity se llama diferente
+            Intent intent = new Intent(MainActivity.this, ListaUsuariosActivity.class);
             startActivity(intent);
-
             finish();
         } else {
+            tilMail.setError("Correo o contraseña incorrectos");
             tilPassword.setError("Correo o contraseña incorrectos");
         }
     }

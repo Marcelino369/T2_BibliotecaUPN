@@ -37,7 +37,6 @@ public class ReporteService {
         List<Prestamo> prestamos = prestamoDao.getTodos();
         for (Prestamo p : prestamos) {
             if (!p.isEntregado() && !p.isPerdido()) {
-                // mora actual en tiempo real
                 p.setMoraAcumulada(moraService.calcularMoraActual(p));
             }
         }
@@ -45,9 +44,7 @@ public class ReporteService {
     }
 
     public List<Prestamo> getPorIntervalo(LocalDate inicio, LocalDate fin) {
-        String startMillis = String.valueOf(inicio.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli());
-        long endMillis = fin.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-        return prestamoDao.getPrestamosPorFecha(startMillis, String.valueOf(endMillis));
+        return prestamoDao.getPrestamosPorFecha(inicio.toString(), fin.toString());
     }
 
     public List<Libro> getLibrosDescartados() {

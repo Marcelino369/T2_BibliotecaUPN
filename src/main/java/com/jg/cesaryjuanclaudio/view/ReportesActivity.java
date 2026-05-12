@@ -60,6 +60,10 @@ public class ReportesActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+        Button btnRetroceder  = findViewById(R.id.btn_retroceder);
+        btnRetroceder.setOnClickListener(v -> {
+            finish();
+        });
 
         spinnerReporte  = findViewById(R.id.spinner_reporte);
         tilFechaInicio  = findViewById(R.id.til_fecha_inicio);
@@ -144,8 +148,7 @@ public class ReportesActivity extends AppCompatActivity {
         String finStr    = etFechaFin.getText().toString().trim();
 
         if (inicioStr.isEmpty() || finStr.isEmpty()) {
-            runOnUiThread(() ->
-                    Toast.makeText(this, "Ingrese ambas fechas.", Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(this, "Ingrese ambas fechas.", Toast.LENGTH_SHORT).show());
             return;
         }
 
@@ -154,25 +157,36 @@ public class ReportesActivity extends AppCompatActivity {
             LocalDate fin    = LocalDate.parse(finStr);
 
             if (fin.isBefore(inicio)) {
-                runOnUiThread(() ->
-                        Toast.makeText(this, "La fecha fin debe ser posterior a la fecha inicio.",
-                                Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(this,
+                        "La fecha fin debe ser posterior al inicio.", Toast.LENGTH_SHORT).show());
                 return;
             }
 
+            MoraService moraService = MoraService.getInstance();
             List<Prestamo> lista = reporteService.getPorIntervalo(inicio, fin);
-            for (Prestamo p : lista)
-                filas.add(p.getFechaPrestamo() + "  " + p.getNombreUsuario()
+
+            for (Prestamo p : lista) {
+                if (!p.isEntregado() && !p.isPerdido()) {
+                    p.setMoraAcumulada(moraService.calcularMoraActual(p));
+                }
+                String estado = p.isPerdido() ? "PERDIDO"
+                        : p.isEntregado() ? "ENTREGADO"
+                        : "ACTIVO";
+                filas.add("ID:" + p.getId()
+                        + "  " + p.getNombreUsuario()
                         + "  |  " + p.getTituloLibro()
-                        + "  Mora: S/" + String.format("%.2f", p.getMoraAcumulada()));
+                        + "  [" + estado + "]"
+                        + "  Mora: S/" + String.format("%.2f", p.getMoraAcumulada())
+                        + "  Límite: " + p.getFechaLimite());
+            }
+
             if (lista.isEmpty()) filas.add("Sin préstamos en ese intervalo.");
 
         } catch (DateTimeParseException e) {
-            runOnUiThread(() ->
-                    Toast.makeText(this, "Formato de fecha inválido. Use YYYY-MM-DD.", Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(this,
+                    "Formato inválido. Use YYYY-MM-DD.", Toast.LENGTH_SHORT).show());
         }
     }
-
     private void reporteDescartados() {
         List<Libro> lista = reporteService.getLibrosDescartados();
         for (Libro l : lista)
